@@ -1106,8 +1106,8 @@ func TestPodmanDriver_DefaultCaps(t *testing.T) {
 
 	// a default container should not have SYS_TIME
 	require.NotContains(t, inspectData.EffectiveCaps, "CAP_SYS_TIME")
-	// a default container gets MKNOD cap
-	require.Contains(t, inspectData.EffectiveCaps, "CAP_MKNOD")
+	// a default container gets CHOWN cap
+	require.Contains(t, inspectData.EffectiveCaps, "CAP_CHOWN")
 }
 
 // check modified capabilities (CapAdd/CapDrop)
@@ -1120,14 +1120,14 @@ func TestPodmanDriver_Caps(t *testing.T) {
 	// 	cap_drop = [
 	//     "MKNOD",
 	//   ]
-	taskCfg.CapDrop = []string{"MKNOD"}
+	taskCfg.CapDrop = []string{"CHOWN"}
 
 	inspectData := startDestroyInspect(t, taskCfg, "caps")
 
 	// we added SYS_TIME, so we should see it in inspect
 	require.Contains(t, inspectData.EffectiveCaps, "CAP_SYS_TIME")
-	// we dropped CAP_MKNOD, so we should NOT see it in inspect
-	require.NotContains(t, inspectData.EffectiveCaps, "CAP_MKNOD")
+	// we dropped CAP_CHOWN, so we should NOT see it in inspect
+	require.NotContains(t, inspectData.EffectiveCaps, "CAP_CHOWN")
 }
 
 // check dns server configuration
@@ -1141,18 +1141,23 @@ func TestPodmanDriver_Dns(t *testing.T) {
 		"-c",
 		"sleep 1; cat /etc/resolv.conf",
 	})
-	// config {
-	//   dns = [
-	//     "1.1.1.1"
-	//   ]
+	// network {
+	//   dns {
+	//     servers = ["1.1.1.1"]
+	// 	   searches = ["internal.corp"]
+	//     options = ["ndots:2"]
+	//   }
 	// }
-	taskCfg.Dns = []string{"1.1.1.1"}
-
 	task := &drivers.TaskConfig{
 		ID:        uuid.Generate(),
 		Name:      "dns",
 		AllocID:   uuid.Generate(),
 		Resources: createBasicResources(),
+		DNS: &drivers.DNSConfig{
+			Servers:  []string{"1.1.1.1"},
+			Searches: []string{"internal.corp"},
+			Options:  []string{"ndots:2"},
+		},
 	}
 	require.NoError(t, task.EncodeConcreteDriverConfig(&taskCfg))
 
@@ -1180,6 +1185,8 @@ func TestPodmanDriver_Dns(t *testing.T) {
 	// see if stdout was populated with the correct output
 	tasklog := readLogfile(t, task)
 	require.Contains(t, tasklog, "nameserver 1.1.1.1")
+	require.Contains(t, tasklog, "search internal.corp")
+	require.Contains(t, tasklog, "options ndots:2")
 
 }
 

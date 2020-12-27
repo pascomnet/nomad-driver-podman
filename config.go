@@ -100,5 +100,4 @@ type TaskConfig struct {
 	Volumes           []string           `codec:"volumes"`
 	CapAdd            []string           `codec:"cap_add"`
 	CapDrop           []string           `codec:"cap_drop"`
-	Dns               []string           `codec:"dns"`
 }
