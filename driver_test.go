@@ -399,7 +399,7 @@ func TestPodmanDriver_logJournald(t *testing.T) {
 	taskCfg := newTaskConfig("", []string{
 		"sh",
 		"-c",
-		fmt.Sprintf("echo %s; 1>&2 echo %s", stdoutMagic, stderrMagic),
+		fmt.Sprintf("sleep 1; echo %s; 1>&2 echo %s", stdoutMagic, stderrMagic),
 	})
 	taskCfg.Logging.Driver = "journald"
 	task := &drivers.TaskConfig{
